@@ -42,21 +42,21 @@ public class QueryServlet extends HttpServlet {
 			out.print("Invalid product ID" + "<br/>");
 		}
 		String productName = "";
-		String sql = "select * from product";
+		String sql = "select * from product where productid=?";
 	
+		Connection conn = null;
+		PreparedStatement pst = null;
 		try {
 			Class.forName("org.h2.Driver"); 			
-			Connection conn = DriverManager.getConnection("jdbc:h2:~/test","sa","");
-			PreparedStatement pst = conn.prepareStatement(sql);
+			conn = DriverManager.getConnection("jdbc:h2:~/test","sa","");
+			pst = conn.prepareStatement(sql);
+			pst.setString(1, request.getParameter("productId"));
 			ResultSet rs = pst.executeQuery();
 			
-			while(rs.next()) {
-				int rsProductId = Integer.parseInt(rs.getString(1));
-				if(rsProductId == productId) {
-					productName = rs.getString(2);
-					found = true;
-				}
-				
+			rs.last();
+			if (rs.getRow() > 0) {
+				productName = rs.getString(2);
+				found = true;
 			}
 			if(found) {
 				rd = request.getRequestDispatcher("index.html");
@@ -68,11 +68,23 @@ public class QueryServlet extends HttpServlet {
 				rd.include(request, response);
 				out.print("ProductID:" + productId + " is not found" + "<br/>");
 			}
+			conn.close();
 		}catch(ClassNotFoundException e) {
-			
+			try {
+				conn.close();
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}catch(SQLException e) {
-			
+			try {
+				conn.close();
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
 	}
 
 }
+
